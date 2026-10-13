@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">TermuxIDE</string>
+    <string name="action_save">Save (Ctrl+S)</string>
+    <string name="action_command_palette">Command Palette (Ctrl+P)</string>
+    <string name="action_toggle_terminal">Toggle Terminal (Ctrl+T)</string>
+    <string name="action_toggle_files">Toggle Files (Ctrl+E)</string>
+    <string name="status_encoding">UTF-8</string>
+    <string name="termux_not_installed">Termux is not installed or permission missing</string>
+    <string name="shortcut_blocked_msg">Blocked Ctrl+Shift chord: Mobile keyboard stability guard active</string>
+</resources>

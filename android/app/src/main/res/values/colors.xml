@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme palette requested in specification -->
+    <color name="editor_background">#09090B</color>
+    <color name="editor_text">#E4E4E7</color>
+    <color name="panel_background">#18181B</color>
+    <color name="panel_border">#27272A</color>
+    <color name="gutter_background">#0E0E11</color>
+    <color name="gutter_text">#52525B</color>
+    <color name="current_line">#1A1A1E</color>
+    <color name="selection_color">#2A3A5E</color>
+    <color name="accent_blue">#3B82F6</color>
+    <color name="accent_emerald">#10B981</color>
+    <color name="accent_amber">#F59E0B</color>
+    <color name="accent_rose">#F43F5E</color>
+    
+    <!-- Tree-sitter Token Colors -->
+    <color name="syntax_keyword">#F43F5E</color>
+    <color name="syntax_function">#60A5FA</color>
+    <color name="syntax_type">#34D399</color>
+    <color name="syntax_string">#FBBF24</color>
+    <color name="syntax_number">#FB923C</color>
+    <color name="syntax_comment">#71717A</color>
+    <color name="syntax_operator">#E4E4E7</color>
+    <color name="syntax_variable">#E4E4E7</color>
+</resources>

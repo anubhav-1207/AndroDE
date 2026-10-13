@@ -1,0 +1,6 @@
+{
+  "name": "TermuxIDE - Native Android IDE",
+  "description": "Ultra-powerful native Android IDE (AndroDE) for landscape mobile & tablet layouts featuring Tree-sitter incremental syntax highlighting, Termux IPC bridge, and single-modifier hardware keyboard shortcuts.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/editor_background"
+    tools:context=".MainActivity">
+
+    <!-- Central Editor Layout with Micro Top Status Bar (<28px) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Micro Top Status Bar (<28px height, 22dp) -->
+        <LinearLayout
+            android:id="@+id/microStatusBar"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:background="@color/panel_background"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <!-- Toggle Left Files Drawer Button -->
+            <TextView
+                android:id="@+id/btnToggleFiles"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="[📁 Files]"
+                android:textColor="@color/accent_blue"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:paddingEnd="6dp" />
+
+            <!-- Active File Name -->
+            <TextView
+                android:id="@+id/tvActiveFileName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="main.rs"
+                android:textColor="@color/editor_text"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:ellipsize="end"
+                android:singleLine="true" />
+
+            <!-- Encoding Badge -->
+            <TextView
+                android:id="@+id/tvEncoding"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="UTF-8"
+                android:textColor="@color/gutter_text"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp" />
+
+            <!-- Language Mode Badge -->
+            <TextView
+                android:id="@+id/tvLanguageMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rust (Tree-sitter)"
+                android:textColor="@color/accent_emerald"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:paddingStart="6dp"
+                android:paddingEnd="8dp" />
+
+            <!-- Run in Termux Button -->
+            <TextView
+                android:id="@+id/btnRunTermux"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="[▶ Run]"
+                android:textColor="@color/accent_emerald"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:paddingStart="4dp"
+                android:paddingEnd="6dp" />
+
+            <!-- Toggle Terminal Drawer Button -->
+            <TextView
+                android:id="@+id/btnToggleTerminal"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="[⚡ Termux]"
+                android:textColor="@color/accent_amber"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:paddingStart="4dp" />
+        </LinearLayout>
+
+        <!-- Divider line -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/panel_border" />
+
+        <!-- High-Performance Native Code Editor View -->
+        <com.termuxide.editor.NativeCodeEditor
+            android:id="@+id/nativeCodeEditor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <!-- Left Slide-Over Drawer: Project File Explorer -->
+    <include
+        layout="@layout/drawer_file_explorer"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start" />
+
+    <!-- Right Slide-Over Drawer: Termux Terminal Stream -->
+    <include
+        layout="@layout/drawer_termux_terminal"
+        android:layout_width="380dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end" />
+
+</androidx.drawerlayout.widget.DrawerLayout>
