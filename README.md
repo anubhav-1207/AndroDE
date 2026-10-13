@@ -29,7 +29,10 @@ A high-performance Android IDE built specifically for horizontal mobile and tabl
    - `Ctrl+P`: Command Palette fuzzy search
    - `Ctrl+T`: Toggle Termux Terminal stream
    - `Ctrl+E`: Toggle File Explorer
-   - **Strict Guard**: Explicitly intercepts and discards any `Ctrl+Shift` chord to protect mobile keyboard layout stability.
+5. **GitHub Actions Automated Cloud Build**
+   - Automatically builds `app-debug.apk` on every push or manual dispatch.
+   - Attaches `TermuxIDE-Debug-APK` as a downloadable artifact in GitHub.
+   - Workflow file configured at `.github/workflows/build-apk.yml`.
 
 ---
 

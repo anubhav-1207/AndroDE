@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import JSZip from 'jszip';
 import {
   Folder,
   FileCode,
@@ -21,8 +22,14 @@ import {
   Minimize2,
   FileText,
   Settings,
-  HelpCircle
+  HelpCircle,
+  Download,
+  Smartphone,
+  ExternalLink,
+  PackageCheck
 } from 'lucide-react';
+
+import { ANDROID_BUNDLE_FILES } from './androidBundle';
 
 interface ProjectFile {
   id: string;
@@ -159,6 +166,44 @@ export default function App() {
   const [selectedInspectorFile, setSelectedInspectorFile] = useState<string>('MainActivity.kt');
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
 
+  // APK Download Modal & Build Center
+  const [downloadApkModalOpen, setDownloadApkModalOpen] = useState<boolean>(false);
+  const [activeDownloadTab, setActiveDownloadTab] = useState<'actions' | 'termux' | 'zip' | 'studio' | 'permission'>('actions');
+  const [isZipping, setIsZipping] = useState<boolean>(false);
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+
+  const handleDownloadProjectZip = async () => {
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      for (const file of ANDROID_BUNDLE_FILES) {
+        zip.file(file.path, file.content);
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'TermuxIDE-Android-SDK34.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatusToast('Downloaded TermuxIDE-Android-SDK34.zip');
+      setTimeout(() => setStatusToast(null), 3000);
+    } catch (err) {
+      console.error('Failed to generate zip', err);
+      alert('Failed to generate zip file');
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCmd(label);
+    setTimeout(() => setCopiedCmd(null), 2000);
+  };
+
   // Current active file
   const activeFile = files.find((f) => f.id === activeFileId) || files[0];
 
@@ -212,6 +257,7 @@ export default function App() {
       if (e.key === 'Escape') {
         if (commandPaletteOpen) setCommandPaletteOpen(false);
         else if (sourceInspectorOpen) setSourceInspectorOpen(false);
+        else if (downloadApkModalOpen) setDownloadApkModalOpen(false);
         else {
           setLeftDrawerOpen(false);
           setRightDrawerOpen(false);
@@ -221,7 +267,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [commandPaletteOpen, sourceInspectorOpen, activeFile]);
+  }, [commandPaletteOpen, sourceInspectorOpen, downloadApkModalOpen, activeFile]);
 
   const handleSaveActiveFile = () => {
     setFiles((prev) =>
@@ -405,6 +451,16 @@ export default function App() {
       shortcut: 'Ctrl+T',
       category: 'View',
       action: () => setRightDrawerOpen((p) => !p),
+    },
+    {
+      title: 'Download Android APK / Build Guide',
+      category: 'APK',
+      action: () => setDownloadApkModalOpen(true),
+    },
+    {
+      title: 'Download Android Project Bundle (.zip)',
+      category: 'APK',
+      action: () => handleDownloadProjectZip(),
     },
     {
       title: 'Inspect Kotlin & XML Android Source Code',
@@ -833,6 +889,16 @@ dependencies {
           </button>
 
           <span className="text-zinc-600">|</span>
+
+          {/* Download APK / Build Guide button */}
+          <button
+            onClick={() => setDownloadApkModalOpen(true)}
+            className="flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors"
+            title="Download APK or Build Guide"
+          >
+            <Download className="w-3 h-3" />
+            <span>Download APK</span>
+          </button>
 
           {/* Android Source Code Inspector button */}
           <button
@@ -1272,6 +1338,448 @@ dependencies {
                   <code>{ANDROID_SOURCES[selectedInspectorFile].content}</code>
                 </pre>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. APK DOWNLOAD & BUILD CENTER MODAL */}
+      {downloadApkModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 font-mono"
+          onClick={() => setDownloadApkModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-3xl bg-[#18181B] border border-[#27272A] rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="h-12 bg-[#121215] border-b border-[#27272A] flex items-center justify-between px-4">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-zinc-100 text-[13px] flex items-center space-x-2">
+                    <span>TermuxIDE APK Download & Build Center</span>
+                    <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.2 rounded font-normal">
+                      SDK 34 • Native
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-zinc-400">
+                    Get the native Android APK or compile it directly on your mobile device
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setDownloadApkModalOpen(false)}
+                className="p-1 hover:bg-[#27272A] rounded text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-[#27272A] bg-[#0E0E11] text-[11px] overflow-x-auto">
+              <button
+                onClick={() => setActiveDownloadTab('actions')}
+                className={`flex items-center space-x-1.5 px-4 py-2 border-b-2 font-medium transition-colors ${
+                  activeDownloadTab === 'actions'
+                    ? 'border-indigo-500 text-indigo-300 bg-[#18181B]'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <PackageCheck className="w-3.5 h-3.5" />
+                <span>GitHub Actions (Cloud Build)</span>
+              </button>
+              <button
+                onClick={() => setActiveDownloadTab('termux')}
+                className={`flex items-center space-x-1.5 px-4 py-2 border-b-2 font-medium transition-colors ${
+                  activeDownloadTab === 'termux'
+                    ? 'border-emerald-500 text-emerald-300 bg-[#18181B]'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span>Build in Termux (On Device)</span>
+              </button>
+              <button
+                onClick={() => setActiveDownloadTab('zip')}
+                className={`flex items-center space-x-1.5 px-4 py-2 border-b-2 font-medium transition-colors ${
+                  activeDownloadTab === 'zip'
+                    ? 'border-blue-500 text-blue-300 bg-[#18181B]'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Project (.ZIP)</span>
+              </button>
+              <button
+                onClick={() => setActiveDownloadTab('studio')}
+                className={`flex items-center space-x-1.5 px-4 py-2 border-b-2 font-medium transition-colors ${
+                  activeDownloadTab === 'studio'
+                    ? 'border-purple-500 text-purple-300 bg-[#18181B]'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Android Studio (PC/Mac)</span>
+              </button>
+              <button
+                onClick={() => setActiveDownloadTab('permission')}
+                className={`flex items-center space-x-1.5 px-4 py-2 border-b-2 font-medium transition-colors ${
+                  activeDownloadTab === 'permission'
+                    ? 'border-amber-500 text-amber-300 bg-[#18181B]'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>Termux Permission Setup</span>
+              </button>
+            </div>
+
+            {/* Tab Contents */}
+            <div className="flex-1 overflow-y-auto p-4 text-[12px] space-y-4">
+              {/* TAB 0: GITHUB ACTIONS CLOUD BUILD */}
+              {activeDownloadTab === 'actions' && (
+                <div className="space-y-3.5">
+                  <div className="p-3 bg-indigo-950/30 border border-indigo-700/50 rounded-lg text-indigo-200 text-[11.5px] leading-relaxed">
+                    <span className="font-bold text-indigo-300">🚀 Automated Cloud Build Configured!</span> Every time you push code or trigger a workflow on GitHub, GitHub Actions runs Gradle, builds <code className="text-white font-mono bg-indigo-900/50 px-1 rounded">app-debug.apk</code>, and attaches it as a downloadable artifact.
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="font-bold text-zinc-200 text-[12px]">
+                      How to download the APK from GitHub Actions:
+                    </div>
+
+                    <div className="space-y-2 text-[11.5px] text-zinc-300">
+                      <div className="flex items-start space-x-2.5 p-2 bg-[#0E0E11] rounded border border-[#27272A]">
+                        <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+                        <div>
+                          <span>Push your repository to GitHub (or open your GitHub repo):</span>
+                          <div className="text-zinc-400 font-mono text-[11px] mt-0.5">github.com/anubhav-1207/AndroDE</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-2.5 p-2 bg-[#0E0E11] rounded border border-[#27272A]">
+                        <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+                        <div>
+                          <span>Go to the <strong>Actions</strong> tab in your repository navigation.</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-2.5 p-2 bg-[#0E0E11] rounded border border-[#27272A]">
+                        <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+                        <div>
+                          <span>Click on the <strong>"Build Android APK"</strong> workflow on the left sidebar.</span>
+                          <span className="text-zinc-400 text-[10.5px] block mt-0.5">You can also click <em>"Run workflow"</em> to trigger a fresh build manually.</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-2.5 p-2 bg-[#0E0E11] rounded border border-[#27272A]">
+                        <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">4</span>
+                        <div>
+                          <span>Click on the latest completed workflow run.</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-2.5 p-2 bg-[#0E0E11] rounded border border-[#27272A]">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600/30 text-emerald-400 flex items-center justify-center text-[10px] font-bold shrink-0">5</span>
+                        <div>
+                          <span>Scroll to the <strong>Artifacts</strong> section at the bottom and click:</span>
+                          <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-emerald-950/60 text-emerald-300 border border-emerald-700/50 rounded font-mono text-[11px] mt-1 font-semibold">
+                            <Download className="w-3.5 h-3.5" />
+                            <span>TermuxIDE-Debug-APK</span>
+                          </div>
+                          <span className="text-zinc-400 text-[10.5px] block mt-0.5">The zip file contains the compiled <code className="text-zinc-200">app-debug.apk</code> ready to install on Android!</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 mb-1">
+                        <span>Workflow File: .github/workflows/build-apk.yml</span>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              `name: Build Android APK
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Build APK
+        working-directory: ./android
+        run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TermuxIDE-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk`,
+                              'gha_file'
+                            )
+                          }
+                          className="flex items-center space-x-1 text-zinc-400 hover:text-zinc-200"
+                        >
+                          {copiedCmd === 'gha_file' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCmd === 'gha_file' ? 'Copied' : 'Copy Workflow'}</span>
+                        </button>
+                      </div>
+                      <pre className="p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-300 font-mono text-[10.5px] overflow-x-auto">
+                        <code>{`name: Build Android APK
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Build Android Debug APK
+        working-directory: ./android
+        run: ./gradlew assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TermuxIDE-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 1: BUILD IN TERMUX ON DEVICE */}
+              {activeDownloadTab === 'termux' && (
+                <div className="space-y-3">
+                  <div className="p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-lg text-emerald-200 text-[11.5px] leading-relaxed">
+                    <span className="font-bold text-emerald-400">💡 No PC required!</span> You can build and install the native Android APK completely offline directly inside Termux on your phone or tablet.
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-[11px] font-bold text-zinc-400 mb-1">
+                        STEP 1: Install OpenJDK 17 & Gradle in Termux
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-200 font-mono text-[11px]">
+                        <code>pkg update && pkg install openjdk-17 gradle git -y</code>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              'pkg update && pkg install openjdk-17 gradle git -y',
+                              'step1'
+                            )
+                          }
+                          className="flex items-center space-x-1 px-2 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-300 rounded text-[10px] shrink-0 ml-2"
+                        >
+                          {copiedCmd === 'step1' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCmd === 'step1' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold text-zinc-400 mb-1">
+                        STEP 2: Download or navigate to the Android project folder
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-200 font-mono text-[11px]">
+                        <code>cd TermuxIDE/android</code>
+                        <button
+                          onClick={() => copyToClipboard('cd TermuxIDE/android', 'step2')}
+                          className="flex items-center space-x-1 px-2 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-300 rounded text-[10px] shrink-0 ml-2"
+                        >
+                          {copiedCmd === 'step2' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCmd === 'step2' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold text-zinc-400 mb-1">
+                        STEP 3: Compile the Debug APK using Gradle
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-200 font-mono text-[11px]">
+                        <code>gradle assembleDebug</code>
+                        <button
+                          onClick={() => copyToClipboard('gradle assembleDebug', 'step3')}
+                          className="flex items-center space-x-1 px-2 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-300 rounded text-[10px] shrink-0 ml-2"
+                        >
+                          {copiedCmd === 'step3' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCmd === 'step3' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-bold text-zinc-400 mb-1">
+                        STEP 4: Install the generated APK on your Android device
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-200 font-mono text-[11px]">
+                        <code>termux-open app/build/outputs/apk/debug/app-debug.apk</code>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              'termux-open app/build/outputs/apk/debug/app-debug.apk',
+                              'step4'
+                            )
+                          }
+                          className="flex items-center space-x-1 px-2 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-300 rounded text-[10px] shrink-0 ml-2"
+                        >
+                          {copiedCmd === 'step4' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCmd === 'step4' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: DOWNLOAD PROJECT ZIP */}
+              {activeDownloadTab === 'zip' && (
+                <div className="space-y-4 text-center py-4">
+                  <div className="max-w-md mx-auto space-y-2">
+                    <div className="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mx-auto border border-blue-500/30">
+                      <Download className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-[14px] font-bold text-zinc-100">
+                      Download Complete Android Source Bundle
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                      Generates a full ready-to-build ZIP containing <span className="text-zinc-200 font-semibold">MainActivity.kt</span>, <span className="text-zinc-200 font-semibold">NativeCodeEditor.kt</span>, <span className="text-zinc-200 font-semibold">TreeSitterEngine.kt</span>, <span className="text-zinc-200 font-semibold">TermuxBridge.kt</span>, all Gradle configs (SDK 34), wrapper, and layout XML files.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleDownloadProjectZip}
+                    disabled={isZipping}
+                    className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-semibold rounded-lg shadow-lg text-[12px] transition-all"
+                  >
+                    {isZipping ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Packaging ZIP...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        <span>Download TermuxIDE-Android-SDK34.zip</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="text-[10px] text-zinc-500">
+                    File contains 20+ production-grade Android project files • Instant unpack & build
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: ANDROID STUDIO GUIDE */}
+              {activeDownloadTab === 'studio' && (
+                <div className="space-y-3">
+                  <div className="text-[12px] text-zinc-300">
+                    To build the APK using Android Studio on your PC, Mac, or Linux workstation:
+                  </div>
+
+                  <ol className="list-decimal list-inside space-y-2 text-[11.5px] text-zinc-300 pl-1 leading-relaxed">
+                    <li>
+                      <span className="font-semibold text-zinc-100">Open Android Studio</span> and select <span className="font-semibold text-blue-400">Open an Existing Project</span>.
+                    </li>
+                    <li>
+                      Select the <code className="bg-[#09090B] px-1 py-0.5 rounded text-zinc-200">android/</code> directory of TermuxIDE.
+                    </li>
+                    <li>
+                      Allow Android Studio to complete the initial <span className="font-semibold text-emerald-400">Gradle Sync</span>.
+                    </li>
+                    <li>
+                      In the top menu, navigate to:
+                      <div className="p-2 bg-[#09090B] border border-[#27272A] rounded mt-1 text-zinc-200 font-mono text-[11px]">
+                        Build ➔ Build Bundle(s) / APK(s) ➔ Build APK(s)
+                      </div>
+                    </li>
+                    <li>
+                      Once the build finishes, click <span className="font-semibold text-blue-400">locate</span> in the bottom-right notification popup, or find the APK at:
+                      <div className="p-2 bg-[#09090B] border border-[#27272A] rounded mt-1 text-emerald-300 font-mono text-[11px]">
+                        app/build/outputs/apk/debug/app-debug.apk
+                      </div>
+                    </li>
+                    <li>
+                      Transfer <code className="text-zinc-100">app-debug.apk</code> to your Android phone or tablet via USB or Google Drive and tap to install!
+                    </li>
+                  </ol>
+                </div>
+              )}
+
+              {/* TAB 4: TERMUX PERMISSION SETUP */}
+              {activeDownloadTab === 'permission' && (
+                <div className="space-y-3">
+                  <div className="p-3 bg-amber-950/20 border border-amber-800/40 rounded-lg text-amber-200 text-[11.5px] leading-relaxed">
+                    <span className="font-bold text-amber-400">⚠️ Termux RUN_COMMAND permission</span>: Termux v0.118+ requires explicit user consent before external applications can run commands in its background service.
+                  </div>
+
+                  <div className="space-y-2 text-[11.5px] text-zinc-300">
+                    <div className="font-bold text-zinc-200">How to configure Termux on your device:</div>
+                    <ol className="list-decimal list-inside space-y-1.5 pl-1">
+                      <li>Open the Termux app on your Android device.</li>
+                      <li>Run the command to open or create properties:</li>
+                    </ol>
+                    <div className="flex items-center justify-between p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-200 font-mono text-[11px]">
+                      <code>{'echo "allow-external-apps = true" >> ~/.termux/termux.properties'}</code>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(
+                            'echo "allow-external-apps = true" >> ~/.termux/termux.properties',
+                            'perm1'
+                          )
+                        }
+                        className="flex items-center space-x-1 px-2 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-300 rounded text-[10px] shrink-0 ml-2"
+                      >
+                        {copiedCmd === 'perm1' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedCmd === 'perm1' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+
+                    <div className="pt-1">
+                      <li>Reload Termux settings to apply changes:</li>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 bg-[#09090B] border border-[#27272A] rounded-lg text-zinc-200 font-mono text-[11px]">
+                      <code>termux-reload-settings</code>
+                      <button
+                        onClick={() => copyToClipboard('termux-reload-settings', 'perm2')}
+                        className="flex items-center space-x-1 px-2 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-300 rounded text-[10px] shrink-0 ml-2"
+                      >
+                        {copiedCmd === 'perm2' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedCmd === 'perm2' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="h-10 bg-[#121215] border-t border-[#27272A] flex items-center justify-between px-4 text-[10px] text-zinc-400">
+              <span>Android SDK 34 • Gradle 8.7 • Bionic Libc</span>
+              <button
+                onClick={() => setDownloadApkModalOpen(false)}
+                className="px-3 py-1 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-200 rounded font-medium"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
