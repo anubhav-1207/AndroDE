@@ -1443,21 +1443,53 @@ dependencies {
               {/* TAB 0: GITHUB ACTIONS CLOUD BUILD */}
               {activeDownloadTab === 'actions' && (
                 <div className="space-y-3.5">
-                  <div className="p-3 bg-indigo-950/30 border border-indigo-700/50 rounded-lg text-indigo-200 text-[11.5px] leading-relaxed">
-                    <span className="font-bold text-indigo-300">🚀 Automated Cloud Build Configured!</span> Every time you push code or trigger a workflow on GitHub, GitHub Actions runs Gradle, builds <code className="text-white font-mono bg-indigo-900/50 px-1 rounded">app-debug.apk</code>, and attaches it as a downloadable artifact.
+                  <div className="p-3 bg-amber-950/30 border border-amber-700/50 rounded-lg text-amber-200 text-[11.5px] leading-relaxed space-y-1">
+                    <div className="font-bold text-amber-300 flex items-center space-x-1.5">
+                      <HelpCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Why isn't this workflow on your GitHub repository yet?</span>
+                    </div>
+                    <div>
+                      AI Studio builds files inside this sandbox container. It does <strong>not</strong> have write access to push commits directly to your private GitHub account (<code className="text-amber-100">anubhav-1207/AndroDE</code>).
+                    </div>
+                    <div className="pt-1">
+                      👉 <strong>To activate it in 30 seconds:</strong> Click the button below to create the file on GitHub, paste the workflow code, and click <em>Commit</em>.
+                    </div>
                   </div>
 
+                  <div className="flex items-center space-x-2">
+                    <a
+                      href="https://github.com/anubhav-1207/AndroDE/new/main?filename=.github%2Fworkflows%2Fbuild-apk.yml"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-semibold transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open GitHub & Create Workflow File</span>
+                    </a>
+
+                    <button
+                      onClick={handleDownloadProjectZip}
+                      disabled={isZipping}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#27272A] hover:bg-[#3f3f46] text-zinc-200 rounded-lg text-[11px] transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Project with Workflow (.ZIP)</span>
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-indigo-950/30 border border-indigo-700/50 rounded-lg text-indigo-200 text-[11.5px] leading-relaxed">
+                    <span className="font-bold text-indigo-300">📱 Clarification on "ubuntu-latest":</span> The workflow runs on an Ubuntu server VM only to run the Google Android SDK and Gradle compiler. The final output file is <strong className="text-white bg-indigo-900/60 px-1 py-0.5 rounded font-mono">app-debug.apk</strong>, which is a <strong>100% native Android package</strong> that installs directly on your Android phone or tablet. It is <u>not</u> an Ubuntu binary!
+                  </div>
                   <div className="space-y-3">
                     <div className="font-bold text-zinc-200 text-[12px]">
-                      How to download the APK from GitHub Actions:
+                      How to download the APK once added to GitHub:
                     </div>
 
                     <div className="space-y-2 text-[11.5px] text-zinc-300">
                       <div className="flex items-start space-x-2.5 p-2 bg-[#0E0E11] rounded border border-[#27272A]">
                         <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
                         <div>
-                          <span>Push your repository to GitHub (or open your GitHub repo):</span>
-                          <div className="text-zinc-400 font-mono text-[11px] mt-0.5">github.com/anubhav-1207/AndroDE</div>
+                          <span>Push this workflow file to GitHub (or create it using the link above).</span>
                         </div>
                       </div>
 
@@ -1516,10 +1548,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Build APK
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - name: Accept Android SDK Licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+      - name: Build Android Debug APK
         working-directory: ./android
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug --stacktrace --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: TermuxIDE-Debug-APK
@@ -1542,6 +1578,7 @@ on:
 
 jobs:
   build-apk:
+    name: Build & Package TermuxIDE APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1549,10 +1586,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - name: Accept Android SDK Licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
       - name: Build Android Debug APK
         working-directory: ./android
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug --stacktrace --no-daemon
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
