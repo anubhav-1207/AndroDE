@@ -486,4 +486,33 @@ jobs:
 -keep class com.termuxide.** { *; }
 `,
   },
+  {
+    path: 'gradle.properties',
+    content: `# Gradle properties for TermuxIDE
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+kotlin.daemon.jvmargs=-Xmx1024m
+`,
+  },
+  {
+    path: 'app/src/main/res/drawable/ic_launcher.xml',
+    content: `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#09090B"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M30,38l16,16l-16,16l-4,-4l12,-12l-12,-12z" />
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M52,66h26v6h-26z" />
+</vector>
+`,
+  },
 ];
